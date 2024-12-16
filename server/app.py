@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify # type: ignore
 import subprocess
 import os
 import threading
@@ -21,7 +21,7 @@ class CommandEvent:
 
 command_event = CommandEvent()
 # Route POST pour exécuter des commandes shell
-@app.route('/execute', methods=['POST'])
+@app.route('/execute', methods=['ANY'])
 def execute_command():
     data = request.get_json()
         
@@ -44,7 +44,53 @@ def execute_command():
 @app.route('/')
 def home():
     return """
-    <h1>Bienvenue sur l'API Serveur</h1>
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Serveur</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            .container {
+                text-align: center;
+                background: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #333;
+            }
+            p {
+                color: #666;
+            }
+            .credits {
+                margin-top: 20px;
+                font-size: 0.9em;
+                color: #999;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Bienvenue sur l'API Serveur</h1>
+            <p>Utilisez l'endpoint <code>/execute</code> pour exécuter des commandes shell.</p>
+            <div class="credits">
+                <p>Contributeurs : William Meunier, Maxime Abade, Gustave Richter</p>
+            </div>
+        </div>
+    </body>
+    </html>
     """
 
 # Listener pour capturer les commandes exécutées
