@@ -7,6 +7,8 @@ import threading
 app = Flask(__name__)
 PORT = 3000
 
+
+
 # Gestionnaire d'événements pour les commandes
 class CommandEvent:
     def __init__(self):
@@ -43,6 +45,7 @@ def execute_command():
 # Route GET pour la racine "/"
 @app.route('/')
 def home():
+    background = os.path.join(os.getcwd(), "bgManageD3.png")
     return """
     <!DOCTYPE html>
     <html lang="fr">
@@ -60,6 +63,7 @@ def home():
                 justify-content: center;
                 align-items: center;
                 height: 100vh;
+                background-image: url('""" + background + """');
             }
             .container {
                 text-align: center;
@@ -74,20 +78,12 @@ def home():
             p {
                 color: #666;
             }
-            .credits {
-                margin-top: 20px;
-                font-size: 0.9em;
-                color: #999;
-            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>Bienvenue sur l'API Serveur</h1>
             <p>Utilisez l'endpoint <code>/execute</code> pour exécuter des commandes shell.</p>
-            <div class="credits">
-                <p>Contributeurs : William Meunier, Maxime Abade, Gustave Richter</p>
-            </div>
         </div>
     </body>
     </html>
